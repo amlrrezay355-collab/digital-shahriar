@@ -2,45 +2,144 @@
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>دیجیتال شهریار</title>
-  <style>
-    body{margin:0;font-family:Arial;background:#111827;color:white}
-    header{padding:18px;background:#1f2937;text-align:center;font-size:22px}
-    #messages{height:calc(100vh - 130px);overflow:auto;padding:15px}
-    .message{background:#374151;padding:10px 14px;margin:8px 0;border-radius:12px;width:max-content}
-    form{position:fixed;bottom:0;left:0;right:0;display:flex;gap:8px;padding:10px;background:#1f2937}
-    input{flex:1;padding:13px;border:0;border-radius:10px;font-size:16px}
-    button{padding:13px 20px;border:0;border-radius:10px;background:#ec407a;color:white}
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<header>💬 دیجیتال شهریار</header>
+  <div class="app">
 
-<div id="messages"></div>
+    <header class="header">
+      <div class="header-row">
+        <div class="logo">💬 دیجیتال شهریار</div>
+        <button class="menu-btn" onclick="showMenu()">☰</button>
+      </div>
+    </header>
 
-<form id="form">
-  <input id="input" placeholder="پیامت را بنویس..." autocomplete="off">
-  <button>ارسال</button>
-</form>
+    <main class="page">
 
-<script src="/socket.io/socket.io.js"></script>
-<script>
-const socket=io();
-const form=document.getElementById("form");
-const input=document.getElementById("input");
-const messages=document.getElementById("messages");
+      <section class="banner">
+        <h2>سلام 👋</h2>
+        <p>به دیجیتال شهریار خوش آمدی.</p>
+      </section>
 
-form.addEventListener("submit",e=>{
-  e.preventDefault();
-  const text=input.value.trim();
-  if(!text)return;
-  socket.emit("chat message",text);
-  input.value="";
-});
+      <section class="card">
+        <h3>🏠 صفحه اصلی</h3>
+        <p>اینجا مرکز پیام‌رسان توست.</p>
+      </section>
 
-socket.on("chat message",message=>{
-  const div=document.createElement("div");
-  div.className="message";
-  div.textContent=message;
- 
+      <section class="card">
+        <h3>💬 گفتگوی عمومی</h3>
+
+        <div id="chatBox" class="chat-box"></div>
+
+        <div class="chat-input">
+          <input
+            id="messageInput"
+            type="text"
+            placeholder="پیامت را بنویس..."
+          >
+          <button onclick="sendMessage()">➤</button>
+        </div>
+      </section>
+
+    </main>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn active" onclick="home()">🏠<br>خانه</button>
+      <button class="nav-btn" onclick="chat()">💬<br>پیام‌ها</button>
+      <button class="nav-btn" onclick="profile()">👤<br>پروفایل</button>
+      <button class="nav-btn" onclick="settings()">⚙️<br>تنظیمات</button>
+    </nav>
+
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+
+  <script>
+    const socket = io();
+
+    const chatBox = document.getElementById("chatBox");
+    const messageInput = document.getElementById("messageInput");
+
+    let username = localStorage.getItem("username");
+
+    if (!username) {
+      username = prompt("نام شما چیست؟") || "کاربر";
+      localStorage.setItem("username", username);
+    }
+
+    socket.emit("join", username);
+
+    function sendMessage() {
+      const message = messageInput.value.trim();
+
+      if (!message) return;
+
+      socket.emit("chat message", message);
+
+      messageInput.value = "";
+      messageInput.focus();
+    }
+
+    messageInput.addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        sendMessage();
+      }
+    });
+
+    socket.on("chat message", function(data) {
+      const message = document.createElement("div");
+      message.className = "message";
+
+      message.innerHTML = `
+        <div class="message-name">${escapeHtml(data.username)}</div>
+        <div>${escapeHtml(data.text)}</div>
+        <div class="message-time">
+          ${new Date(data.time).toLocaleTimeString("fa-IR")}
+        </div>
+      `;
+
+      chatBox.appendChild(message);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    socket.on("system", function(data) {
+      const message = document.createElement("div");
+      message.className = "message";
+      message.textContent = data.text;
+
+      chatBox.appendChild(message);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function showMenu() {
+      alert("منوی دیجیتال شهریار");
+    }
+
+    function home() {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function chat() {
+      chatBox.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function profile() {
+      alert("پروفایل: " + username);
+    }
+
+    function settings() {
+      alert("تنظیمات");
+    }
+  </script>
+
+</body>
+</html>
